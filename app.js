@@ -215,6 +215,104 @@ const updateMaxVr = () => {
     display.textContent = maxVr.toLocaleString();
 };
 
+// --- 5. CSVエクスポート機能 ---
+const exportCSV = () => {
+    if (vrData.length === 0) {
+        alert('エクスポートするデータがありません。');
+        return;
+    }
+
+    // ヘッダー行を作成
+    let csvContent = "id,vr_score,created_at\n";
+
+    // データをCSV形式の文字列に変換
+    vrData.forEach(item => {
+        csvContent += `${item.id},${item.vr_score},${item.created_at}\n`;
+    });
+
+    // Blobオブジェクトを作成（BOMを付与してExcelで開いた時の文字化けを防ぐ）
+    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+    const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+    
+    // ダウンロード用のリンクを動的に生成してクリックさせる
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    // ファイル名に今日の日付を入れる
+    const today = new Date().toISOString().slice(0, 10);
+    link.download = `mariokart_vr_data_${today}.csv`;
+    link.click();
+    
+    // 生成したURLのメモリ解放
+    URL.revokeObjectURL(link.href);
+};
+
+// --- 6. CSVインポート機能 ---
+const importCSV = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // 誤操作防止の確認（インポートすると現在のデータが上書きされる仕様とします）
+    if (!confirm('現在のデータが上書きされます。インポートしてもよろしいですか？\n（※必要に応じて事前にエクスポートをお願いします）')) {
+        event.target.value = ''; // ファイル選択をリセット
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const text = e.target.result;
+        const lines = text.split('\n');
+        const newData = [];
+
+        // 1行目（ヘッダー）を飛ばして2行目から処理
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+
+            const [id, vr_score, created_at] = line.split(',');
+            
+            // 簡単なデータチェック
+            if (id && vr_score && created_at) {
+                newData.push({
+                    id: id,
+                    vr_score: parseInt(vr_score, 10),
+                    created_at: created_at
+                });
+            }
+        }
+
+        if (newData.length > 0) {
+            // データを上書きしてローカルストレージに保存
+            vrData = newData;
+            localStorage.setItem('mk_vr_data', JSON.stringify(vrData));
+            
+            // 画面の再描画
+            renderHistory();
+            renderChart();
+            updateMaxVr(); // 先ほど作成した自己ベスト更新関数
+            
+            alert(`${newData.length}件のデータをインポートしました。`);
+        } else {
+            alert('有効なデータが見つかりませんでした。');
+        }
+        
+        event.target.value = ''; // ファイル選択をリセット
+    };
+    
+    // ファイルをテキストとして読み込む
+    reader.readAsText(file);
+};
+
+// --- ボタンへのイベントリスナー登録 ---
+document.getElementById('exportBtn').addEventListener('click', exportCSV);
+
+// インポートボタンを押したら、隠してある <input type="file"> をクリックしたことにする
+document.getElementById('importBtn').addEventListener('click', () => {
+    document.getElementById('csvFileInput').click();
+});
+
+// ファイルが選択されたらインポート処理を実行
+document.getElementById('csvFileInput').addEventListener('change', importCSV);
+
 // イベントリスナーの登録
 saveBtn.addEventListener('click', saveVR);
 
