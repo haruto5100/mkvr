@@ -10,10 +10,18 @@
 <body>
     <div class="container">
         <h1>VR管理システム</h1>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+    
+            <div class="stats-section">
+                <span style="font-weight: bold;">最高VR: <span id="maxVrDisplay" style="color: var(--primary-color); font-size: 1.2rem;">---</span></span>
+            </div>
 
-        <div class="stats-section">
-            <p>最高VR: <span id="maxVrDisplay" style="font-weight: bold; color: var(--primary-color);">---</span></p>
-        </div>
+            <div class="data-management-section">
+                <button id="exportBtn" style="padding: 6px 12px; font-size: 0.9rem; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; background-color: #fff;">CSVエクスポート</button>
+                <button id="importBtn" style="padding: 6px 12px; font-size: 0.9rem; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; background-color: #fff; margin-left: 8px;">CSVインポート</button>
+                <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
+            </div>
+    </div>
         
         <div class="input-section">
             <input type="number" id="vrInput" placeholder="現在のVRを入力" required>
