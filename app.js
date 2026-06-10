@@ -5,6 +5,8 @@ const historyList = document.getElementById('historyList');
 
 // データの初期化（ローカルストレージから取得、なければ空配列）
 let vrData = JSON.parse(localStorage.getItem('mk_vr_data')) || [];
+// Chartインスタンスを保持する変数（再描画時のバグを防ぐため）
+let vrChartInstance = null;
 
 // --- 今後実装していくメイン機能の枠組み ---
 
@@ -81,7 +83,63 @@ const renderHistory = () => {
 
 // 3. グラフを描画・更新する関数
 const renderChart = () => {
-    // TODO: Chart.jsを使ってvrDataを折れ線グラフにする
+    // データがない場合は描画処理をスキップ
+    if (vrData.length === 0) return;
+
+    // グラフは「左から右へ（古い順から新しい順へ）」表示したいので、時系列順にソートした配列を用意
+    const chronologicalData = [...vrData].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+    // X軸（ラベル：月/日 時:分）とY軸（データ：VR）の配列を抽出
+    const labels = chronologicalData.map(item => {
+        const date = new Date(item.created_at);
+        // グラフの下部が窮屈にならないよう、短めのフォーマット（例: 6/10 13:21）にします
+        return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+    });
+    const dataPoints = chronologicalData.map(item => item.vr_score);
+
+    // canvas要素のコンテキストを取得
+    const ctx = document.getElementById('vrChart').getContext('2d');
+
+    // すでにグラフが描画されている場合は破棄する
+    if (vrChartInstance) {
+        vrChartInstance.destroy();
+    }
+
+    // Chart.jsで新しい折れ線グラフを生成
+    vrChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'VR',
+                data: dataPoints,
+                borderColor: '#E52521', // マリオを意識した赤色
+                backgroundColor: 'rgba(229, 37, 33, 0.1)', // 薄い赤色でグラフ下部を塗りつぶし
+                borderWidth: 2,
+                pointBackgroundColor: '#fff',
+                pointBorderColor: '#E52521',
+                pointRadius: 4,
+                fill: true,
+                tension: 0.1 // 少しだけ線を滑らかにする
+            }]
+        },
+        options: {
+            responsive: true,
+            // CSSで親要素の高さを指定してグラフサイズを制御できるようにする
+            maintainAspectRatio: false, 
+            scales: {
+                y: {
+                    // VRの推移の「変化」を強調するため、Y軸を0から始めない
+                    beginAtZero: false 
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false // 「VR」という凡例は自明なので非表示にしてスペースを確保
+                }
+            }
+        }
+    });
 };
 
 // イベントリスナーの登録
