@@ -142,6 +142,24 @@ const renderChart = () => {
     });
 };
 
+// 4. 特定の記録を削除する関数
+const deleteVR = (targetId) => {
+    // 誤操作防止の確認ダイアログ
+    if (!confirm('この記録を削除してもよろしいですか？')) {
+        return;
+    }
+
+    // 指定されたID「以外」のデータだけを残す（＝指定IDを削除）
+    vrData = vrData.filter(item => item.id !== targetId);
+
+    // ローカルストレージを新しい配列で上書き保存
+    localStorage.setItem('mk_vr_data', JSON.stringify(vrData));
+
+    // 履歴リストとグラフを最新の状態で再描画
+    renderHistory();
+    renderChart();
+};
+
 // イベントリスナーの登録
 saveBtn.addEventListener('click', saveVR);
 
