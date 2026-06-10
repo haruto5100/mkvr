@@ -3,6 +3,25 @@ const vrInput = document.getElementById('vrInput');
 const saveBtn = document.getElementById('saveBtn');
 const historyList = document.getElementById('historyList');
 
+// 現在選択されているグラフの表示期間（初期値は 'all'）
+let currentChartPeriod = 'all';
+
+// 初期状態のボタンに 'active' クラスを付与
+document.querySelector('.filter-btn[data-period="all"]').classList.add('active');
+
+// 期間切り替えボタンのイベントリスナー
+document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        // 全ボタンから 'active' クラスを外し、クリックされたボタンに付与
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+
+        // 選択された期間を変数に格納し、グラフを再描画
+        currentChartPeriod = e.target.getAttribute('data-period');
+        renderChart();
+    });
+});
+
 // データの初期化（ローカルストレージから取得、なければ空配列）
 let vrData = JSON.parse(localStorage.getItem('mk_vr_data')) || [];
 // Chartインスタンスを保持する変数（再描画時のバグを防ぐため）
@@ -122,31 +141,48 @@ const renderHistory = () => {
     });
 };
 
-// 3. グラフを描画・更新する関数
+// 3. グラフを描画・更新する関数（期間絞り込み機能付き）
 const renderChart = () => {
-    // データがない場合は描画処理をスキップ
     if (vrData.length === 0) return;
 
-    // グラフは「左から右へ（古い順から新しい順へ）」表示したいので、時系列順にソートした配列を用意
-    const chronologicalData = [...vrData].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    // --- 現在の時刻を基準にデータを絞り込む ---
+    const now = new Date();
+    let filteredData = vrData;
 
-    // X軸（ラベル：月/日 時:分）とY軸（データ：VR）の配列を抽出
+    if (currentChartPeriod === '1w') {
+        // 7日前の日時を計算
+        const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        filteredData = vrData.filter(item => new Date(item.created_at) >= oneWeekAgo);
+    } else if (currentChartPeriod === '1m') {
+        // 1ヶ月前の日時を計算（日付のズレを防ぐため年月日を設定）
+        const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        filteredData = vrData.filter(item => new Date(item.created_at) >= oneMonthAgo);
+    }
+
+    // 絞り込んだ結果、表示するデータがない場合はグラフをクリアして終了
+    if (filteredData.length === 0) {
+        if (vrChartInstance) {
+            vrChartInstance.destroy();
+            vrChartInstance = null;
+        }
+        return;
+    }
+
+    // 古い順（昇順）にソート
+    const chronologicalData = [...filteredData].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
     const labels = chronologicalData.map(item => {
         const date = new Date(item.created_at);
-        // グラフの下部が窮屈にならないよう、短めのフォーマット（例: 6/10 13:21）にします
         return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
     });
     const dataPoints = chronologicalData.map(item => item.vr_score);
 
-    // canvas要素のコンテキストを取得
     const ctx = document.getElementById('vrChart').getContext('2d');
 
-    // すでにグラフが描画されている場合は破棄する
     if (vrChartInstance) {
         vrChartInstance.destroy();
     }
 
-    // Chart.jsで新しい折れ線グラフを生成
     vrChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
@@ -154,29 +190,27 @@ const renderChart = () => {
             datasets: [{
                 label: 'VR',
                 data: dataPoints,
-                borderColor: '#E52521', // マリオを意識した赤色
-                backgroundColor: 'rgba(229, 37, 33, 0.1)', // 薄い赤色でグラフ下部を塗りつぶし
+                borderColor: '#E52521',
+                backgroundColor: 'rgba(229, 37, 33, 0.1)',
                 borderWidth: 2,
                 pointBackgroundColor: '#fff',
                 pointBorderColor: '#E52521',
                 pointRadius: 4,
                 fill: true,
-                tension: 0.1 // 少しだけ線を滑らかにする
+                tension: 0.1
             }]
         },
         options: {
             responsive: true,
-            // CSSで親要素の高さを指定してグラフサイズを制御できるようにする
-            maintainAspectRatio: false, 
+            maintainAspectRatio: false,
             scales: {
                 y: {
-                    // VRの推移の「変化」を強調するため、Y軸を0から始めない
-                    beginAtZero: false 
+                    beginAtZero: false
                 }
             },
             plugins: {
                 legend: {
-                    display: false // 「VR」という凡例は自明なので非表示にしてスペースを確保
+                    display: false
                 }
             }
         }

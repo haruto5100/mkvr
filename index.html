@@ -21,7 +21,7 @@
                 <button id="importBtn" style="padding: 6px 12px; font-size: 0.9rem; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; background-color: #fff; margin-left: 8px;">CSVインポート</button>
                 <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
             </div>
-    </div>
+        </div>
         
         <div class="input-section">
             <input type="number" id="vrInput" placeholder="現在のVRを入力" required>
@@ -29,6 +29,11 @@
         </div>
 
         <div class="chart-section">
+            <div style="display: flex; gap: 8px; justify-content: flex-end; margin-bottom: 10px;">
+                <button class="filter-btn" data-period="all">すべて</button>
+                <button class="filter-btn" data-period="1m">1ヶ月</button>
+                <button class="filter-btn" data-period="1w">1週間</button>
+            </div>
             <canvas id="vrChart"></canvas>
         </div>
 
@@ -37,7 +42,7 @@
             <ul id="historyList"></ul>
         </div>
     </div>
-
+    
     <script src="app.js"></script>
 </body>
 </html>
