@@ -1,0 +1,124 @@
+/* 変数の定義（テーマカラー） */
+:root {
+    --primary-color: #E52521; /* マリオレッド */
+    --bg-color: #f4f4f9;
+    --card-bg: #ffffff;
+    --text-color: #333333;
+    --border-color: #dddddd;
+}
+
+/* リセットCSS */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    /* スマホ画面の端に余白を作る */
+    padding: 20px 15px; 
+}
+
+/* メインコンテナ */
+.container {
+    /* PCで見ても横に広がりすぎないように最大幅を設定 */
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+h1 {
+    text-align: center;
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    color: var(--primary-color);
+}
+
+h2 {
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 5px;
+    display: inline-block;
+}
+
+/* 各セクションの共通カードデザイン */
+.input-section,
+.chart-section,
+.history-section {
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+
+/* 入力エリア */
+.input-section {
+    display: flex;
+    gap: 10px;
+}
+
+#vrInput {
+    flex: 1; /* 余ったスペースをすべて入力欄に */
+    padding: 12px;
+    font-size: 1.2rem; /* スマホの自動ズーム防止のため大きめに */
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+#vrInput:focus {
+    border-color: var(--primary-color);
+}
+
+#saveBtn {
+    padding: 12px 24px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: white;
+    background-color: var(--primary-color);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    /* モバイルでのダブルタップズームを無効化 */
+    touch-action: manipulation;
+}
+
+#saveBtn:hover {
+    background-color: #c91f1c;
+}
+
+#saveBtn:active {
+    transform: scale(0.96); /* 押したときの沈み込みアクション */
+}
+
+/* グラフエリア */
+.chart-section {
+    /* Chart.jsをレスポンシブに表示させるために高さを固定 */
+    height: 300px; 
+    position: relative;
+}
+
+/* 履歴エリア */
+#historyList {
+    list-style: none;
+    padding: 0;
+    /* 履歴が増えすぎても画面全体が長くならないよう、内部でスクロールさせる */
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+#historyList li {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+#historyList li:last-child {
+    border-bottom: none;
+}
