@@ -8,8 +8,6 @@ let vrData = JSON.parse(localStorage.getItem('mk_vr_data')) || [];
 // Chartインスタンスを保持する変数（再描画時のバグを防ぐため）
 let vrChartInstance = null;
 
-// --- 今後実装していくメイン機能の枠組み ---
-
 // 1. データを保存する関数
 const saveVR = () => {
     // 入力値の取得
@@ -43,6 +41,7 @@ const saveVR = () => {
     // 画面の更新（この2つの関数はこの後実装します）
     renderHistory();
     renderChart();
+    updateMaxVr();
 };
 
 // 2. 履歴を画面に描画する関数（削除ボタン追加版）
@@ -178,6 +177,20 @@ const deleteVR = (targetId) => {
     // 履歴リストとグラフを最新の状態で再描画
     renderHistory();
     renderChart();
+    updateMaxVr();
+};
+
+// 5. 最高値を計算して表示する関数
+const updateMaxVr = () => {
+    const display = document.getElementById('maxVrDisplay');
+    if (vrData.length === 0) {
+        display.textContent = '---';
+        return;
+    }
+
+    // vrDataの中から最大値を探す
+    const maxVr = Math.max(...vrData.map(item => item.vr_score));
+    display.textContent = maxVr.toLocaleString();
 };
 
 // イベントリスナーの登録
@@ -186,3 +199,4 @@ saveBtn.addEventListener('click', saveVR);
 // 初期表示時の実行
 renderHistory();
 renderChart();
+updateMaxVr();
