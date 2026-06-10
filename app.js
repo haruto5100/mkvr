@@ -45,26 +45,26 @@ const saveVR = () => {
     renderChart();
 };
 
-// 2. 履歴を画面に描画する関数
+// 2. 履歴を画面に描画する関数（削除ボタン追加版）
 const renderHistory = () => {
-    // 履歴リストの表示を一旦クリア（重複描画を防ぐため）
     historyList.innerHTML = '';
 
-    // データが空の場合はメッセージを表示して終了
     if (vrData.length === 0) {
         historyList.innerHTML = '<li>まだ記録がありません。</li>';
         return;
     }
 
-    // 新しい順（降順）にソートした新しい配列を作成
-    // ※元のvrDataの並び順を変えないよう [...vrData] とスプレッド構文でコピーしています
     const sortedData = [...vrData].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-    // ソートされたデータをループ処理してリスト(li)を生成
     sortedData.forEach(item => {
         const li = document.createElement('li');
+        
+        // レイアウトの調整（文字と削除ボタンを横並びにする）
+        li.style.display = 'flex';
+        li.style.justifyContent = 'space-between';
+        li.style.alignItems = 'center';
+        li.style.marginBottom = '8px';
 
-        // 日時を日本人が見やすい形式にフォーマット (例: 2026/06/10 13:21)
         const date = new Date(item.created_at);
         const yyyy = date.getFullYear();
         const mm = String(date.getMonth() + 1).padStart(2, '0');
@@ -73,10 +73,30 @@ const renderHistory = () => {
         const min = String(date.getMinutes()).padStart(2, '0');
         const formattedDate = `${yyyy}/${mm}/${dd} ${hh}:${min}`;
 
-        // リスト要素にHTMLを流し込む
-        li.innerHTML = `<strong>VR: ${item.vr_score.toLocaleString()}</strong> <span style="font-size: 0.8em; color: #666; margin-left: 10px;">${formattedDate}</span>`;
+        // テキスト部分の作成
+        const textSpan = document.createElement('span');
+        textSpan.innerHTML = `<strong>VR: ${item.vr_score.toLocaleString()}</strong> <span style="font-size: 0.8em; color: #666; margin-left: 10px;">${formattedDate}</span>`;
         
-        // ul要素に追加
+        // 削除ボタンの作成
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = '削除';
+        // 簡単なボタンスタイル
+        deleteBtn.style.padding = '4px 8px';
+        deleteBtn.style.fontSize = '12px';
+        deleteBtn.style.color = '#fff';
+        deleteBtn.style.backgroundColor = '#666';
+        deleteBtn.style.border = 'none';
+        deleteBtn.style.borderRadius = '4px';
+        deleteBtn.style.cursor = 'pointer';
+
+        // 削除ボタンがクリックされた時の処理
+        deleteBtn.addEventListener('click', () => {
+            deleteVR(item.id);
+        });
+
+        // テキストとボタンをリスト要素に追加
+        li.appendChild(textSpan);
+        li.appendChild(deleteBtn);
         historyList.appendChild(li);
     });
 };
