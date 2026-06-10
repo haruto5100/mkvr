@@ -44,7 +44,7 @@ const saveVR = () => {
     updateMaxVr();
 };
 
-// 2. 履歴を画面に描画する関数（削除ボタン追加版）
+// 2. 履歴を画面に描画する関数（削除ボタン ＆ 差分表示 追加版）
 const renderHistory = () => {
     historyList.innerHTML = '';
 
@@ -53,12 +53,13 @@ const renderHistory = () => {
         return;
     }
 
+    // 新しい順（降順）にソート
     const sortedData = [...vrData].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-    sortedData.forEach(item => {
+    // forEachの第二引数(index)を利用して、配列内の前後のデータを比較します
+    sortedData.forEach((item, index) => {
         const li = document.createElement('li');
         
-        // レイアウトの調整（文字と削除ボタンを横並びにする）
         li.style.display = 'flex';
         li.style.justifyContent = 'space-between';
         li.style.alignItems = 'center';
@@ -72,14 +73,37 @@ const renderHistory = () => {
         const min = String(date.getMinutes()).padStart(2, '0');
         const formattedDate = `${yyyy}/${mm}/${dd} ${hh}:${min}`;
 
-        // テキスト部分の作成
+        // 差分の計算とHTML生成
+        let diffHtml = '';
+        // 最後の要素（一番最初の記録）以外の場合、1つ古い記録（index + 1）と比較する
+        if (index < sortedData.length - 1) {
+            const previousItem = sortedData[index + 1];
+            const diff = item.vr_score - previousItem.vr_score;
+            
+            let diffColor = '#999'; // デフォルトはグレー（変化なし）
+            let diffSign = '±';
+            
+            if (diff > 0) {
+                diffColor = '#E52521'; // プラスは赤
+                diffSign = '+';
+            } else if (diff < 0) {
+                diffColor = '#0066cc'; // マイナスは青
+                diffSign = ''; // 負の数はマイナス記号が自動で付くので空文字
+            }
+            
+            diffHtml = `<span style="font-size: 0.9em; font-weight: bold; color: ${diffColor}; margin-left: 8px;">(${diffSign}${diff})</span>`;
+        } else {
+            // 一番最初の記録には差分がないためハイフンを表示
+            diffHtml = `<span style="font-size: 0.9em; font-weight: bold; color: #999; margin-left: 8px;">(-)</span>`;
+        }
+
+        // テキスト部分の作成（差分表示を追加）
         const textSpan = document.createElement('span');
-        textSpan.innerHTML = `<strong>VR: ${item.vr_score.toLocaleString()}</strong> <span style="font-size: 0.8em; color: #666; margin-left: 10px;">${formattedDate}</span>`;
+        textSpan.innerHTML = `<strong>VR: ${item.vr_score.toLocaleString()}</strong>${diffHtml} <span style="font-size: 0.8em; color: #666; margin-left: 10px;">${formattedDate}</span>`;
         
         // 削除ボタンの作成
         const deleteBtn = document.createElement('button');
         deleteBtn.textContent = '削除';
-        // 簡単なボタンスタイル
         deleteBtn.style.padding = '4px 8px';
         deleteBtn.style.fontSize = '12px';
         deleteBtn.style.color = '#fff';
@@ -88,12 +112,10 @@ const renderHistory = () => {
         deleteBtn.style.borderRadius = '4px';
         deleteBtn.style.cursor = 'pointer';
 
-        // 削除ボタンがクリックされた時の処理
         deleteBtn.addEventListener('click', () => {
             deleteVR(item.id);
         });
 
-        // テキストとボタンをリスト要素に追加
         li.appendChild(textSpan);
         li.appendChild(deleteBtn);
         historyList.appendChild(li);
