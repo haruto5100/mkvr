@@ -1,142 +1,558 @@
-/* 変数の定義（テーマカラー） */
+/* ============================================================
+   MK WORLD VR SYSTEM — READABLE DARK THEME
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ---- VARIABLES ---- */
 :root {
-    --primary-color: #E52521; /* マリオレッド */
-    --bg-color: #f4f4f9;
-    --card-bg: #ffffff;
-    --text-color: #333333;
-    --border-color: #dddddd;
+    /* Backgrounds */
+    --bg:          #0a0e17;
+    --bg-card:     #111827;
+    --bg-item:     #1a2233;
+    --bg-input:    #1a2233;
+
+    /* Borders */
+    --border:      #2a3a50;
+    --border-focus: #3b82f6;
+
+    /* Text */
+    --text-primary:   #f0f4f8;
+    --text-secondary: #8899aa;
+    --text-muted:     #4d6070;
+
+    /* Accent colors — used sparingly */
+    --cyan:    #38bdf8;
+    --green:   #34d399;
+    --red:     #f87171;
+    --yellow:  #fbbf24;
+    --blue:    #60a5fa;
+    --purple:  #a78bfa;
+
+    /* Dim versions for backgrounds */
+    --cyan-bg:   rgba(56, 189, 248, 0.08);
+    --green-bg:  rgba(52, 211, 153, 0.08);
+    --red-bg:    rgba(248, 113, 113, 0.08);
+    --yellow-bg: rgba(251, 191, 36, 0.08);
+
+    /* Fonts */
+    --font-display: 'Orbitron', monospace;
+    --font-body:    'Inter', sans-serif;
+    --font-mono:    'JetBrains Mono', monospace;
+
+    /* Radius */
+    --radius-sm: 6px;
+    --radius:    10px;
+    --radius-lg: 14px;
 }
 
-/* リセットCSS */
-* {
+/* ---- RESET ---- */
+*, *::before, *::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
 
+/* ---- BASE ---- */
 body {
-    font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-color);
+    font-family: var(--font-body);
+    background-color: var(--bg);
+    color: var(--text-primary);
     line-height: 1.6;
-    /* スマホ画面の端に余白を作る */
-    padding: 20px 15px; 
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
 }
 
-/* メインコンテナ */
-.container {
-    /* PCで見ても横に広がりすぎないように最大幅を設定 */
-    max-width: 600px;
+/* Subtle grid — very faint, doesn't compete with content */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+        linear-gradient(rgba(56, 189, 248, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(56, 189, 248, 0.025) 1px, transparent 1px);
+    background-size: 60px 60px;
+}
+
+/* ---- HEADER ---- */
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10, 14, 23, 0.95);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 0.875rem 1.5rem;
+}
+
+.header-inner {
+    max-width: 900px;
     margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-h1 {
-    text-align: center;
-    font-size: 1.5rem;
-    margin-bottom: 20px;
-    color: var(--primary-color);
+.header-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
 }
 
-h2 {
-    font-size: 1.2rem;
-    margin-bottom: 15px;
-    border-bottom: 2px solid var(--primary-color);
-    padding-bottom: 5px;
-    display: inline-block;
+.logo-text {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 900;
+    color: var(--cyan);
+    letter-spacing: 0.05em;
 }
 
-/* 各セクションの共通カードデザイン */
-.input-section,
-.chart-section,
-.history-section {
-    background: var(--card-bg);
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    margin-bottom: 20px;
+.logo-sep {
+    width: 1px;
+    height: 18px;
+    background: var(--border);
 }
 
-/* 入力エリア */
+.logo-sub {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    letter-spacing: 0.1em;
+}
+
+.header-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+}
+
+.status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse-dot 2.5s infinite;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.5; }
+}
+
+/* ---- LAYOUT ---- */
+.container {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 1.75rem 1.25rem 4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* ---- CARD BASE ---- */
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+}
+
+.card-label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 1.25rem;
+}
+
+/* ---- INPUT CARD ---- */
 .input-section {
     display: flex;
-    gap: 10px;
+    gap: 0.75rem;
+    align-items: stretch;
+}
+
+.input-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--bg-input);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0 1.25rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-wrapper:focus-within {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.input-prefix {
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    user-select: none;
 }
 
 #vrInput {
-    flex: 1; /* 余ったスペースをすべて入力欄に */
-    padding: 12px;
-    font-size: 1.2rem; /* スマホの自動ズーム防止のため大きめに */
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
+    flex: 1;
+    background: transparent;
+    border: none;
     outline: none;
-    transition: border-color 0.2s;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 1.6rem;
+    font-weight: 500;
+    padding: 0.9rem 0;
+    width: 100%;
+    -moz-appearance: textfield;
 }
 
-#vrInput:focus {
-    border-color: var(--primary-color);
+#vrInput::-webkit-outer-spin-button,
+#vrInput::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+#vrInput::placeholder {
+    color: var(--text-muted);
+    font-size: 1rem;
+    font-weight: 400;
 }
 
 #saveBtn {
-    padding: 12px 24px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    color: white;
-    background-color: var(--primary-color);
+    background: var(--blue);
     border: none;
-    border-radius: 8px;
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    padding: 0 2rem;
+    border-radius: var(--radius);
     cursor: pointer;
-    transition: background-color 0.2s, transform 0.1s;
-    /* モバイルでのダブルタップズームを無効化 */
+    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
     touch-action: manipulation;
+    white-space: nowrap;
 }
 
-#saveBtn:hover {
-    background-color: #c91f1c;
+#saveBtn:hover  { background: #3b82f6; box-shadow: 0 4px 14px rgba(59,130,246,0.35); }
+#saveBtn:active { transform: scale(0.97); }
+
+/* ---- KPI GRID ---- */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
 }
 
-#saveBtn:active {
-    transform: scale(0.96); /* 押したときの沈み込みアクション */
+.kpi-card {
+    padding: 1.25rem 1rem;
+    border-radius: var(--radius-lg);
 }
 
-/* グラフエリア */
+.kpi-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+}
+
+.kpi-value {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 900;
+    line-height: 1.1;
+    color: var(--text-primary);
+    margin-bottom: 0.4rem;
+}
+
+.kpi-value.cyan    { color: var(--cyan); }
+.kpi-value.yellow  { color: var(--yellow); }
+.kpi-value.magenta { color: var(--purple); }
+.kpi-value.white   { color: var(--text-primary); }
+
+.kpi-diff {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 500;
+    min-height: 1.2em;
+}
+
+.kpi-sub {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    min-height: 1.2em;
+}
+
+.diff-up   { color: var(--green); }
+.diff-down { color: var(--red); }
+.diff-none { color: var(--text-muted); }
+
+/* KPI card accent borders */
+#kpi-current { border-left: 3px solid var(--cyan); }
+#kpi-best    { border-left: 3px solid var(--yellow); }
+#kpi-avg     { border-left: 3px solid var(--purple); }
+#kpi-count   { border-left: 3px solid var(--blue); }
+
+/* ---- ANALYSIS CARD ---- */
+.analysis-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+}
+
+.stat-item {
+    background: var(--bg-item);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.1rem;
+}
+
+.stat-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    font-family: var(--font-mono);
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.stat-value.gain       { color: var(--green); }
+.stat-value.loss       { color: var(--red); }
+.stat-value.trend-up   { color: var(--green); }
+.stat-value.trend-down { color: var(--red); }
+.stat-value.trend-flat { color: var(--text-muted); }
+
+/* ---- CHART ---- */
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+
+.chart-controls {
+    display: flex;
+    gap: 0.4rem;
+    background: var(--bg-item);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.25rem;
+}
+
+.filter-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    padding: 0.35rem 0.85rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.18s;
+}
+
+.filter-btn:hover {
+    color: var(--text-primary);
+    background: var(--border);
+}
+
+.filter-btn.active {
+    background: var(--blue);
+    color: #fff;
+    font-weight: 600;
+}
+
 .chart-section {
-    /* Chart.jsをレスポンシブに表示させるために高さを固定 */
-    height: 300px; 
     position: relative;
+    height: 300px;
 }
 
-/* 履歴エリア */
+#vrChart { width: 100% !important; height: 100% !important; }
+
+.chart-empty {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+}
+
+/* ---- DATA MANAGEMENT ---- */
+.data-mgmt-buttons {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.mgmt-btn {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    padding: 0.7rem 1rem;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+}
+
+.export-btn:hover {
+    border-color: var(--yellow);
+    color: var(--yellow);
+    background: var(--yellow-bg);
+}
+
+.import-btn:hover {
+    border-color: var(--purple);
+    color: var(--purple);
+    background: rgba(167,139,250,0.08);
+}
+
+/* ---- HISTORY ---- */
 #historyList {
     list-style: none;
-    padding: 0;
-    /* 履歴が増えすぎても画面全体が長くならないよう、内部でスクロールさせる */
-    max-height: 300px;
+    max-height: 380px;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-right: 4px;
 }
 
-#historyList li {
-    padding: 12px 0;
-    border-bottom: 1px solid var(--border-color);
+#historyList::-webkit-scrollbar { width: 5px; }
+#historyList::-webkit-scrollbar-track { background: transparent; }
+#historyList::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+#historyList::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.9rem 1.1rem;
+    background: var(--bg-item);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: background 0.15s, border-color 0.15s;
+    animation: fadeSlide 0.25s ease-out;
 }
 
-#historyList li:last-child {
-    border-bottom: none;
+.history-item:hover { background: #1f2d44; border-color: #3a4f68; }
+
+.history-item.up   { border-left: 3px solid var(--green); }
+.history-item.down { border-left: 3px solid var(--red); }
+
+@keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
-/* --- グラフ期間切り替えボタン --- */
-.filter-btn {
-    padding: 4px 12px;
-    font-size: 0.85rem;
-    border: 1px solid var(--primary-color);
-    background-color: var(--card-bg);
-    color: var(--primary-color);
-    border-radius: 20px;
+.history-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.history-score {
+    font-family: var(--font-mono);
+    font-size: 1.15rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    min-width: 7ch;
+}
+
+.history-diff {
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    font-weight: 500;
+    min-width: 7ch;
+}
+
+.history-date {
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.history-del {
+    flex-shrink: 0;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    padding: 0.3rem 0.65rem;
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.18s;
 }
 
-/* 選択中のボタンのスタイル */
-.filter-btn.active {
-    background-color: var(--primary-color);
-    color: white;
+.history-del:hover {
+    border-color: var(--red);
+    color: var(--red);
+    background: var(--red-bg);
+}
+
+.history-empty {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    text-align: center;
+    letter-spacing: 0.15em;
+    padding: 2.5rem 0;
+}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 720px) {
+    .kpi-grid      { grid-template-columns: repeat(2, 1fr); }
+    .analysis-grid { grid-template-columns: repeat(2, 1fr); }
+    .kpi-value     { font-size: 1.5rem; }
+}
+
+@media (max-width: 480px) {
+    .container { padding: 1rem 0.875rem 3rem; gap: 1rem; }
+    .card      { padding: 1.25rem; }
+
+    .header-logo { gap: 0.5rem; }
+    .logo-text   { font-size: 0.9rem; }
+    .logo-sub    { display: none; }
+
+    .kpi-grid      { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+    .kpi-value     { font-size: 1.4rem; }
+    .analysis-grid { grid-template-columns: repeat(2, 1fr); }
+
+    .input-section { flex-direction: column; }
+    #saveBtn       { width: 100%; padding: 1rem; font-size: 0.9rem; }
+
+    .data-mgmt-buttons { flex-direction: column; }
+    .chart-section     { height: 240px; }
 }

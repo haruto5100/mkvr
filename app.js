@@ -1,356 +1,431 @@
-// DOM要素の取得
-const vrInput = document.getElementById('vrInput');
-const saveBtn = document.getElementById('saveBtn');
-const historyList = document.getElementById('historyList');
+// ============================================================
+//   MK WORLD VR SYSTEM — app.js
+// ============================================================
 
-// 現在選択されているグラフの表示期間（初期値は 'all'）
+// ---- DOM Elements ----
+const vrInput       = document.getElementById('vrInput');
+const saveBtn       = document.getElementById('saveBtn');
+const historyList   = document.getElementById('historyList');
+const chartEmpty    = document.getElementById('chartEmpty');
+
+// ---- State ----
+let vrData = JSON.parse(localStorage.getItem('mk_vr_data')) || [];
+let vrChartInstance = null;
 let currentChartPeriod = 'all';
 
-// 初期状態のボタンに 'active' クラスを付与
-document.querySelector('.filter-btn[data-period="all"]').classList.add('active');
-
-// 期間切り替えボタンのイベントリスナー
-document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        // 全ボタンから 'active' クラスを外し、クリックされたボタンに付与
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
-
-        // 選択された期間を変数に格納し、グラフを再描画
-        currentChartPeriod = e.target.getAttribute('data-period');
-        renderChart();
-    });
-});
-
-// データの初期化（ローカルストレージから取得、なければ空配列）
-let vrData = JSON.parse(localStorage.getItem('mk_vr_data')) || [];
-// Chartインスタンスを保持する変数（再描画時のバグを防ぐため）
-let vrChartInstance = null;
-
-// 1. データを保存する関数
-const saveVR = () => {
-    // 入力値の取得
-    const vrValue = vrInput.value;
-
-    // バリデーション（空入力などの不正な値を防ぐ）
-    if (!vrValue || isNaN(vrValue)) {
-        alert('有効なVR数値を入力してください。');
-        return;
-    }
-
-    // 保存するデータオブジェクトの作成
-    const newData = {
-        // ブラウザ標準機能でUUIDを生成
-        id: crypto.randomUUID(), 
-        // 文字列から整数に変換
-        vr_score: parseInt(vrValue, 10), 
-        // タイムスタンプ（後で扱いやすいようにISO 8601形式で保存）
-        created_at: new Date().toISOString() 
-    };
-
-    // 配列の末尾に追加（新しいデータが後ろに追加される）
-    vrData.push(newData);
-
-    // ローカルストレージにJSON文字列として保存
-    localStorage.setItem('mk_vr_data', JSON.stringify(vrData));
-
-    // 入力完了後、フィールドを空にして次の入力に備える
-    vrInput.value = '';
-
-    // 画面の更新（この2つの関数はこの後実装します）
-    renderHistory();
-    renderChart();
-    updateMaxVr();
+// ---- Utilities ----
+const formatDate = (isoString) => {
+    const d = new Date(isoString);
+    const yyyy = d.getFullYear();
+    const mm   = String(d.getMonth() + 1).padStart(2, '0');
+    const dd   = String(d.getDate()).padStart(2, '0');
+    const hh   = String(d.getHours()).padStart(2, '0');
+    const min  = String(d.getMinutes()).padStart(2, '0');
+    return `${yyyy}/${mm}/${dd} ${hh}:${min}`;
 };
 
-// 2. 履歴を画面に描画する関数（削除ボタン ＆ 差分表示 追加版）
-const renderHistory = () => {
-    historyList.innerHTML = '';
+const formatShortDate = (isoString) => {
+    const d = new Date(isoString);
+    return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+};
+
+const fmtDiff = (n) => n > 0 ? `+${n.toLocaleString()}` : n.toLocaleString();
+
+// ---- Save ----
+const saveVR = () => {
+    const val = vrInput.value.trim();
+    if (!val || isNaN(val) || Number(val) <= 0) {
+        vrInput.focus();
+        vrInput.style.animation = 'none';
+        requestAnimationFrame(() => {
+            vrInput.style.animation = 'shake 0.3s ease';
+        });
+        return;
+    }
+    const newEntry = {
+        id:         crypto.randomUUID(),
+        vr_score:   parseInt(val, 10),
+        created_at: new Date().toISOString()
+    };
+    vrData.push(newEntry);
+    localStorage.setItem('mk_vr_data', JSON.stringify(vrData));
+    vrInput.value = '';
+    renderAll();
+};
+
+// ---- Render All ----
+const renderAll = () => {
+    renderKPI();
+    renderAnalysis();
+    renderChart();
+    renderHistory();
+};
+
+// ---- KPI ----
+const renderKPI = () => {
+    const elCurrent = document.getElementById('kpiCurrent');
+    const elDiff    = document.getElementById('kpiDiff');
+    const elPB      = document.getElementById('kpiPB');
+    const elPBDate  = document.getElementById('kpiPBDate');
+    const elAvg     = document.getElementById('kpiAvg');
+    const elAvgSub  = document.getElementById('kpiAvgSub');
+    const elCount   = document.getElementById('kpiCount');
+    const elPeriod  = document.getElementById('kpiPeriod');
 
     if (vrData.length === 0) {
-        historyList.innerHTML = '<li>まだ記録がありません。</li>';
+        [elCurrent, elPB, elAvg].forEach(el => { el.textContent = '---'; });
+        [elDiff, elPBDate, elAvgSub, elPeriod].forEach(el => { el.textContent = ''; });
+        elCount.textContent = '0';
         return;
     }
 
-    // 新しい順（降順）にソート
-    const sortedData = [...vrData].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    // Sort chronologically
+    const sorted = [...vrData].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    const latest = sorted[sorted.length - 1];
+    const prev   = sorted.length >= 2 ? sorted[sorted.length - 2] : null;
 
-    // forEachの第二引数(index)を利用して、配列内の前後のデータを比較します
-    sortedData.forEach((item, index) => {
-        const li = document.createElement('li');
-        
-        li.style.display = 'flex';
-        li.style.justifyContent = 'space-between';
-        li.style.alignItems = 'center';
-        li.style.marginBottom = '8px';
+    // Current VR
+    elCurrent.textContent = latest.vr_score.toLocaleString();
 
-        const date = new Date(item.created_at);
-        const yyyy = date.getFullYear();
-        const mm = String(date.getMonth() + 1).padStart(2, '0');
-        const dd = String(date.getDate()).padStart(2, '0');
-        const hh = String(date.getHours()).padStart(2, '0');
-        const min = String(date.getMinutes()).padStart(2, '0');
-        const formattedDate = `${yyyy}/${mm}/${dd} ${hh}:${min}`;
+    // Diff from previous
+    if (prev) {
+        const d = latest.vr_score - prev.vr_score;
+        elDiff.textContent = fmtDiff(d);
+        elDiff.className = 'kpi-diff ' + (d > 0 ? 'diff-up' : d < 0 ? 'diff-down' : 'diff-none');
+    } else {
+        elDiff.textContent = 'FIRST RECORD';
+        elDiff.className = 'kpi-diff diff-none';
+    }
 
-        // 差分の計算とHTML生成
-        let diffHtml = '';
-        // 最後の要素（一番最初の記録）以外の場合、1つ古い記録（index + 1）と比較する
-        if (index < sortedData.length - 1) {
-            const previousItem = sortedData[index + 1];
-            const diff = item.vr_score - previousItem.vr_score;
-            
-            let diffColor = '#999'; // デフォルトはグレー（変化なし）
-            let diffSign = '±';
-            
-            if (diff > 0) {
-                diffColor = '#E52521'; // プラスは赤
-                diffSign = '+';
-            } else if (diff < 0) {
-                diffColor = '#0066cc'; // マイナスは青
-                diffSign = ''; // 負の数はマイナス記号が自動で付くので空文字
-            }
-            
-            diffHtml = `<span style="font-size: 0.9em; font-weight: bold; color: ${diffColor}; margin-left: 8px;">(${diffSign}${diff})</span>`;
-        } else {
-            // 一番最初の記録には差分がないためハイフンを表示
-            diffHtml = `<span style="font-size: 0.9em; font-weight: bold; color: #999; margin-left: 8px;">(-)</span>`;
-        }
+    // Personal Best
+    const pbEntry = vrData.reduce((best, cur) => cur.vr_score > best.vr_score ? cur : best, vrData[0]);
+    elPB.textContent = pbEntry.vr_score.toLocaleString();
+    elPBDate.textContent = formatShortDate(pbEntry.created_at);
 
-        // テキスト部分の作成（差分表示を追加）
-        const textSpan = document.createElement('span');
-        textSpan.innerHTML = `<strong>VR: ${item.vr_score.toLocaleString()}</strong>${diffHtml} <span style="font-size: 0.8em; color: #666; margin-left: 10px;">${formattedDate}</span>`;
-        
-        // 削除ボタンの作成
-        const deleteBtn = document.createElement('button');
-        deleteBtn.textContent = '削除';
-        deleteBtn.style.padding = '4px 8px';
-        deleteBtn.style.fontSize = '12px';
-        deleteBtn.style.color = '#fff';
-        deleteBtn.style.backgroundColor = '#666';
-        deleteBtn.style.border = 'none';
-        deleteBtn.style.borderRadius = '4px';
-        deleteBtn.style.cursor = 'pointer';
+    // Average
+    const avg = Math.round(vrData.reduce((s, r) => s + r.vr_score, 0) / vrData.length);
+    elAvg.textContent = avg.toLocaleString();
+    const diffFromAvg = latest.vr_score - avg;
+    elAvgSub.textContent = `LATEST ${fmtDiff(diffFromAvg)}`;
+    elAvgSub.style.color = diffFromAvg >= 0 ? 'var(--green)' : 'var(--red)';
 
-        deleteBtn.addEventListener('click', () => {
-            deleteVR(item.id);
-        });
-
-        li.appendChild(textSpan);
-        li.appendChild(deleteBtn);
-        historyList.appendChild(li);
-    });
+    // Count & Period
+    elCount.textContent = vrData.length;
+    if (vrData.length >= 2) {
+        const first = sorted[0];
+        const ms = new Date(latest.created_at) - new Date(first.created_at);
+        const days = Math.floor(ms / 86400000);
+        elPeriod.textContent = days === 0 ? 'TODAY' : `${days} DAYS`;
+    } else {
+        elPeriod.textContent = '';
+    }
 };
 
-// 3. グラフを描画・更新する関数（期間絞り込み機能付き）
-const renderChart = () => {
-    if (vrData.length === 0) return;
+// ---- Session Analysis ----
+const renderAnalysis = () => {
+    const elMaxGain     = document.getElementById('statMaxGain');
+    const elMaxLoss     = document.getElementById('statMaxLoss');
+    const elWinStreak   = document.getElementById('statWinStreak');
+    const elLoseStreak  = document.getElementById('statLoseStreak');
+    const elTrend7d     = document.getElementById('statTrend7d');
+    const elTrend30d    = document.getElementById('statTrend30d');
 
-    // --- 現在の時刻を基準にデータを絞り込む ---
-    const now = new Date();
-    let filteredData = vrData;
-
-    if (currentChartPeriod === '1w') {
-        // 7日前の日時を計算
-        const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        filteredData = vrData.filter(item => new Date(item.created_at) >= oneWeekAgo);
-    } else if (currentChartPeriod === '1m') {
-        // 1ヶ月前の日時を計算（日付のズレを防ぐため年月日を設定）
-        const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-        filteredData = vrData.filter(item => new Date(item.created_at) >= oneMonthAgo);
-    }
-
-    // 絞り込んだ結果、表示するデータがない場合はグラフをクリアして終了
-    if (filteredData.length === 0) {
-        if (vrChartInstance) {
-            vrChartInstance.destroy();
-            vrChartInstance = null;
-        }
+    if (vrData.length < 2) {
+        [elMaxGain, elMaxLoss, elWinStreak, elLoseStreak, elTrend7d, elTrend30d]
+            .forEach(el => { el.textContent = '---'; el.className = 'stat-value'; });
         return;
     }
 
-    // 古い順（昇順）にソート
-    const chronologicalData = [...filteredData].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    const sorted = [...vrData].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    const diffs = sorted.slice(1).map((cur, i) => cur.vr_score - sorted[i].vr_score);
 
-    const labels = chronologicalData.map(item => {
-        const date = new Date(item.created_at);
-        return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+    // Max gain / loss
+    const maxGain = Math.max(...diffs);
+    const maxLoss = Math.min(...diffs);
+    elMaxGain.textContent = `+${maxGain.toLocaleString()}`;
+    elMaxGain.className = 'stat-value gain';
+    elMaxLoss.textContent = maxLoss.toLocaleString();
+    elMaxLoss.className = 'stat-value loss';
+
+    // Current win/lose streak
+    let winStreak = 0, loseStreak = 0;
+    for (let i = diffs.length - 1; i >= 0; i--) {
+        if (diffs[i] > 0) {
+            if (loseStreak > 0) break;
+            winStreak++;
+        } else if (diffs[i] < 0) {
+            if (winStreak > 0) break;
+            loseStreak++;
+        } else {
+            break;
+        }
+    }
+    elWinStreak.textContent  = winStreak  > 0 ? `${winStreak} GAMES`  : '---';
+    elLoseStreak.textContent = loseStreak > 0 ? `${loseStreak} GAMES` : '---';
+    elWinStreak.className  = winStreak  > 0 ? 'stat-value gain' : 'stat-value';
+    elLoseStreak.className = loseStreak > 0 ? 'stat-value loss' : 'stat-value';
+
+    // Trend helper
+    const computeTrend = (days, el) => {
+        const cutoff = new Date(Date.now() - days * 86400000);
+        const recent = sorted.filter(r => new Date(r.created_at) >= cutoff);
+        if (recent.length < 2) {
+            el.textContent = 'NO DATA';
+            el.className = 'stat-value trend-flat';
+            return;
+        }
+        const delta = recent[recent.length - 1].vr_score - recent[0].vr_score;
+        el.textContent = (delta >= 0 ? '▲ +' : '▼ ') + delta.toLocaleString();
+        el.className = 'stat-value ' + (delta > 0 ? 'trend-up' : delta < 0 ? 'trend-down' : 'trend-flat');
+    };
+
+    computeTrend(7,  elTrend7d);
+    computeTrend(30, elTrend30d);
+};
+
+// ---- Chart ----
+const renderChart = () => {
+    const now = new Date();
+    let filtered = vrData;
+
+    if (currentChartPeriod === '1w') {
+        const ago = new Date(now - 7 * 86400000);
+        filtered = vrData.filter(r => new Date(r.created_at) >= ago);
+    } else if (currentChartPeriod === '1m') {
+        const ago = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        filtered = vrData.filter(r => new Date(r.created_at) >= ago);
+    }
+
+    if (vrChartInstance) { vrChartInstance.destroy(); vrChartInstance = null; }
+
+    if (filtered.length === 0) {
+        chartEmpty.style.display = 'flex';
+        return;
+    }
+    chartEmpty.style.display = 'none';
+
+    const chrono = [...filtered].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    const labels = chrono.map(r => formatShortDate(r.created_at));
+    const scores = chrono.map(r => r.vr_score);
+
+    // 3-point moving average
+    const movAvg = scores.map((_, i) => {
+        if (i === 0) return scores[0];
+        if (i === 1) return Math.round((scores[0] + scores[1]) / 2);
+        return Math.round((scores[i - 2] + scores[i - 1] + scores[i]) / 3);
     });
-    const dataPoints = chronologicalData.map(item => item.vr_score);
 
     const ctx = document.getElementById('vrChart').getContext('2d');
-
-    if (vrChartInstance) {
-        vrChartInstance.destroy();
-    }
 
     vrChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: labels,
-            datasets: [{
-                label: 'VR',
-                data: dataPoints,
-                borderColor: '#E52521',
-                backgroundColor: 'rgba(229, 37, 33, 0.1)',
-                borderWidth: 2,
-                pointBackgroundColor: '#fff',
-                pointBorderColor: '#E52521',
-                pointRadius: 4,
-                fill: true,
-                tension: 0.1
-            }]
+            labels,
+            datasets: [
+                {
+                    label: 'VR',
+                    data: scores,
+                    borderColor: '#38bdf8',
+                    backgroundColor: 'rgba(56, 189, 248, 0.08)',
+                    borderWidth: 2.5,
+                    pointBackgroundColor: '#111827',
+                    pointBorderColor: '#38bdf8',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 7,
+                    pointHoverBackgroundColor: '#38bdf8',
+                    fill: true,
+                    tension: 0.3,
+                },
+                {
+                    label: '移動平均',
+                    data: movAvg,
+                    borderColor: 'rgba(167, 139, 250, 0.75)',
+                    borderWidth: 2,
+                    borderDash: [6, 4],
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0.4,
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: { duration: 500, easing: 'easeInOutQuart' },
             scales: {
+                x: {
+                    ticks: {
+                        color: '#6b7f96',
+                        font: { family: "'JetBrains Mono', monospace", size: 11 },
+                        maxTicksLimit: 8,
+                    },
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    border: { color: 'rgba(255,255,255,0.08)' },
+                },
                 y: {
-                    beginAtZero: false
+                    beginAtZero: false,
+                    ticks: {
+                        color: '#6b7f96',
+                        font: { family: "'JetBrains Mono', monospace", size: 11 },
+                        callback: (v) => v.toLocaleString(),
+                    },
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    border: { color: 'rgba(255,255,255,0.08)' },
                 }
             },
             plugins: {
                 legend: {
-                    display: false
+                    display: true,
+                    labels: {
+                        color: '#8899aa',
+                        font: { family: "'Inter', sans-serif", size: 12 },
+                        boxWidth: 16,
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyleWidth: 10,
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(17, 24, 39, 0.97)',
+                    borderColor: 'rgba(56, 189, 248, 0.35)',
+                    borderWidth: 1,
+                    titleColor: '#8899aa',
+                    titleFont: { family: "'Inter', sans-serif", size: 12 },
+                    bodyColor: '#f0f4f8',
+                    bodyFont: { family: "'JetBrains Mono', monospace", size: 13, weight: '500' },
+                    padding: 14,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: (ctx) => {
+                            if (ctx.datasetIndex === 0) {
+                                return `  VR : ${ctx.parsed.y.toLocaleString()}`;
+                            }
+                            return `  AVG: ${ctx.parsed.y.toLocaleString()}`;
+                        }
+                    }
                 }
             }
         }
     });
 };
 
-// 4. 特定の記録を削除する関数
-const deleteVR = (targetId) => {
-    // 誤操作防止の確認ダイアログ
-    if (!confirm('この記録を削除してもよろしいですか？')) {
-        return;
-    }
+// ---- History ----
+const renderHistory = () => {
+    historyList.innerHTML = '';
 
-    // 指定されたID「以外」のデータだけを残す（＝指定IDを削除）
-    vrData = vrData.filter(item => item.id !== targetId);
-
-    // ローカルストレージを新しい配列で上書き保存
-    localStorage.setItem('mk_vr_data', JSON.stringify(vrData));
-
-    // 履歴リストとグラフを最新の状態で再描画
-    renderHistory();
-    renderChart();
-    updateMaxVr();
-};
-
-// 5. 最高値を計算して表示する関数
-const updateMaxVr = () => {
-    const display = document.getElementById('maxVrDisplay');
     if (vrData.length === 0) {
-        display.textContent = '---';
+        historyList.innerHTML = '<li class="history-empty">NO RECORDS FOUND</li>';
         return;
     }
 
-    // vrDataの中から最大値を探す
-    const maxVr = Math.max(...vrData.map(item => item.vr_score));
-    display.textContent = maxVr.toLocaleString();
-};
+    const sorted = [...vrData].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-// --- 5. CSVエクスポート機能 ---
-const exportCSV = () => {
-    if (vrData.length === 0) {
-        alert('エクスポートするデータがありません。');
-        return;
-    }
+    sorted.forEach((item, index) => {
+        const prev = index < sorted.length - 1 ? sorted[index + 1] : null;
+        const diff = prev ? item.vr_score - prev.vr_score : null;
 
-    // ヘッダー行を作成
-    let csvContent = "id,vr_score,created_at\n";
+        const li = document.createElement('li');
+        li.className = 'history-item' + (diff === null ? '' : diff > 0 ? ' up' : diff < 0 ? ' down' : '');
 
-    // データをCSV形式の文字列に変換
-    vrData.forEach(item => {
-        csvContent += `${item.id},${item.vr_score},${item.created_at}\n`;
+        let diffHtml = '';
+        if (diff !== null) {
+            const cls = diff > 0 ? 'diff-up' : diff < 0 ? 'diff-down' : 'diff-none';
+            diffHtml = `<span class="history-diff ${cls}">${fmtDiff(diff)}</span>`;
+        } else {
+            diffHtml = `<span class="history-diff diff-none">FIRST</span>`;
+        }
+
+        li.innerHTML = `
+            <div class="history-left">
+                <span class="history-score">${item.vr_score.toLocaleString()}</span>
+                ${diffHtml}
+                <span class="history-date">${formatDate(item.created_at)}</span>
+            </div>
+            <button class="history-del" data-id="${item.id}">DEL</button>
+        `;
+
+        li.querySelector('.history-del').addEventListener('click', () => deleteVR(item.id));
+        historyList.appendChild(li);
     });
+};
 
-    // Blobオブジェクトを作成（BOMを付与してExcelで開いた時の文字化けを防ぐ）
-    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
-    const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
-    
-    // ダウンロード用のリンクを動的に生成してクリックさせる
+// ---- Delete ----
+const deleteVR = (targetId) => {
+    if (!confirm('この記録を削除しますか？')) return;
+    vrData = vrData.filter(r => r.id !== targetId);
+    localStorage.setItem('mk_vr_data', JSON.stringify(vrData));
+    renderAll();
+};
+
+// ---- Export CSV ----
+const exportCSV = () => {
+    if (vrData.length === 0) { alert('エクスポートするデータがありません。'); return; }
+    let csv = 'id,vr_score,created_at\n';
+    vrData.forEach(r => { csv += `${r.id},${r.vr_score},${r.created_at}\n`; });
+    const bom  = new Uint8Array([0xEF, 0xBB, 0xBF]);
+    const blob = new Blob([bom, csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    // ファイル名に今日の日付を入れる
-    const today = new Date().toISOString().slice(0, 10);
-    link.download = `mariokart_vr_data_${today}.csv`;
+    link.href  = URL.createObjectURL(blob);
+    link.download = `mkvr_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
-    
-    // 生成したURLのメモリ解放
     URL.revokeObjectURL(link.href);
 };
 
-// --- 6. CSVインポート機能 ---
+// ---- Import CSV ----
 const importCSV = (event) => {
     const file = event.target.files[0];
     if (!file) return;
-
-    // 誤操作防止の確認（インポートすると現在のデータが上書きされる仕様とします）
-    if (!confirm('現在のデータが上書きされます。インポートしてもよろしいですか？\n（※必要に応じて事前にエクスポートをお願いします）')) {
-        event.target.value = ''; // ファイル選択をリセット
+    if (!confirm('現在のデータが上書きされます。インポートしてもよろしいですか？')) {
+        event.target.value = '';
         return;
     }
-
     const reader = new FileReader();
     reader.onload = (e) => {
-        const text = e.target.result;
-        const lines = text.split('\n');
+        const lines   = e.target.result.split('\n');
         const newData = [];
-
-        // 1行目（ヘッダー）を飛ばして2行目から処理
         for (let i = 1; i < lines.length; i++) {
             const line = lines[i].trim();
             if (!line) continue;
-
             const [id, vr_score, created_at] = line.split(',');
-            
-            // 簡単なデータチェック
             if (id && vr_score && created_at) {
-                newData.push({
-                    id: id,
-                    vr_score: parseInt(vr_score, 10),
-                    created_at: created_at
-                });
+                newData.push({ id, vr_score: parseInt(vr_score, 10), created_at });
             }
         }
-
         if (newData.length > 0) {
-            // データを上書きしてローカルストレージに保存
             vrData = newData;
             localStorage.setItem('mk_vr_data', JSON.stringify(vrData));
-            
-            // 画面の再描画
-            renderHistory();
-            renderChart();
-            updateMaxVr(); // 先ほど作成した自己ベスト更新関数
-            
+            renderAll();
             alert(`${newData.length}件のデータをインポートしました。`);
         } else {
             alert('有効なデータが見つかりませんでした。');
         }
-        
-        event.target.value = ''; // ファイル選択をリセット
+        event.target.value = '';
     };
-    
-    // ファイルをテキストとして読み込む
     reader.readAsText(file);
 };
 
-// --- ボタンへのイベントリスナー登録 ---
-document.getElementById('exportBtn').addEventListener('click', exportCSV);
+// ---- Event Listeners ----
+saveBtn.addEventListener('click', saveVR);
+vrInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveVR(); });
 
-// インポートボタンを押したら、隠してある <input type="file"> をクリックしたことにする
+document.getElementById('exportBtn').addEventListener('click', exportCSV);
 document.getElementById('importBtn').addEventListener('click', () => {
     document.getElementById('csvFileInput').click();
 });
-
-// ファイルが選択されたらインポート処理を実行
 document.getElementById('csvFileInput').addEventListener('change', importCSV);
 
-// イベントリスナーの登録
-saveBtn.addEventListener('click', saveVR);
+document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        e.currentTarget.classList.add('active');
+        currentChartPeriod = e.currentTarget.getAttribute('data-period');
+        renderChart();
+    });
+});
 
-// 初期表示時の実行
-renderHistory();
-renderChart();
-updateMaxVr();
+// Set initial active filter button
+document.querySelector('.filter-btn[data-period="all"]').classList.add('active');
+
+// ---- Init ----
+renderAll();

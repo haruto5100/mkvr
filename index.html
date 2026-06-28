@@ -3,46 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>マリオカートワールド VR管理システム</title>
+    <title>MK WORLD // VR SYSTEM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class="container">
-        <h1>VR管理システム</h1>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-    
-            <div class="stats-section">
-                <span style="font-weight: bold;">最高VR: <span id="maxVrDisplay" style="color: var(--primary-color); font-size: 1.2rem;">---</span></span>
-            </div>
 
-            <div class="data-management-section">
-                <button id="exportBtn" style="padding: 6px 12px; font-size: 0.9rem; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; background-color: #fff;">CSVエクスポート</button>
-                <button id="importBtn" style="padding: 6px 12px; font-size: 0.9rem; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; background-color: #fff; margin-left: 8px;">CSVインポート</button>
-                <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
+    <!-- ヘッダー -->
+    <header class="site-header">
+        <div class="header-inner">
+            <div class="header-logo">
+                <span class="logo-text">MK WORLD</span>
+                <div class="logo-sep"></div>
+                <span class="logo-sub">VR TRACKER</span>
+            </div>
+            <div class="header-status">
+                <span class="status-dot"></span>
+                <span class="status-text">ONLINE</span>
             </div>
         </div>
-        
-        <div class="input-section">
-            <input type="number" id="vrInput" placeholder="現在のVRを入力" required>
-            <button id="saveBtn">記録する</button>
-        </div>
+    </header>
 
-        <div class="chart-section">
-            <div style="display: flex; gap: 8px; justify-content: flex-end; margin-bottom: 10px;">
-                <button class="filter-btn" data-period="all">すべて</button>
-                <button class="filter-btn" data-period="1m">1ヶ月</button>
-                <button class="filter-btn" data-period="1w">1週間</button>
+    <main class="container">
+
+        <!-- 入力セクション -->
+        <section class="input-card card">
+            <div class="card-label">VR を記録する</div>
+            <div class="input-section">
+                <div class="input-wrapper">
+                    <span class="input-prefix">VR &gt;</span>
+                    <input type="number" id="vrInput" placeholder="現在のVRを入力" autocomplete="off">
+                </div>
+                <button id="saveBtn">RECORD</button>
             </div>
-            <canvas id="vrChart"></canvas>
-        </div>
+        </section>
 
-        <div class="history-section">
-            <h2>履歴</h2>
+        <!-- KPIカード -->
+        <section class="kpi-grid">
+            <div class="kpi-card card" id="kpi-current">
+                <div class="kpi-label">CURRENT VR</div>
+                <div class="kpi-value cyan" id="kpiCurrent">---</div>
+                <div class="kpi-diff" id="kpiDiff"></div>
+            </div>
+            <div class="kpi-card card" id="kpi-best">
+                <div class="kpi-label">PERSONAL BEST</div>
+                <div class="kpi-value yellow" id="kpiPB">---</div>
+                <div class="kpi-sub" id="kpiPBDate"></div>
+            </div>
+            <div class="kpi-card card" id="kpi-avg">
+                <div class="kpi-label">AVERAGE VR</div>
+                <div class="kpi-value magenta" id="kpiAvg">---</div>
+                <div class="kpi-sub" id="kpiAvgSub"></div>
+            </div>
+            <div class="kpi-card card" id="kpi-count">
+                <div class="kpi-label">TOTAL RECORDS</div>
+                <div class="kpi-value white" id="kpiCount">0</div>
+                <div class="kpi-sub" id="kpiPeriod"></div>
+            </div>
+        </section>
+
+        <!-- セッション分析 -->
+        <section class="analysis-card card">
+            <div class="card-label">セッション分析</div>
+            <div class="analysis-grid">
+                <div class="stat-item">
+                    <div class="stat-label">MAX GAIN</div>
+                    <div class="stat-value gain" id="statMaxGain">---</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">MAX LOSS</div>
+                    <div class="stat-value loss" id="statMaxLoss">---</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">WIN STREAK</div>
+                    <div class="stat-value gain" id="statWinStreak">---</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">LOSE STREAK</div>
+                    <div class="stat-value loss" id="statLoseStreak">---</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">7日間トレンド</div>
+                    <div class="stat-value" id="statTrend7d">---</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">30日間トレンド</div>
+                    <div class="stat-value" id="statTrend30d">---</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- グラフ -->
+        <section class="chart-card card">
+            <div class="card-header">
+                <div class="card-label" style="margin-bottom:0;">VR推移グラフ</div>
+                <div class="chart-controls">
+                    <button class="filter-btn" data-period="all">ALL</button>
+                    <button class="filter-btn" data-period="1m">30D</button>
+                    <button class="filter-btn" data-period="1w">7D</button>
+                </div>
+            </div>
+            <div class="chart-section">
+                <canvas id="vrChart"></canvas>
+                <div class="chart-empty" id="chartEmpty">データがありません</div>
+            </div>
+        </section>
+
+        <!-- データ管理 -->
+        <section class="data-mgmt-card card">
+            <div class="card-label">データ管理</div>
+            <div class="data-mgmt-buttons">
+                <button class="mgmt-btn export-btn" id="exportBtn">▲ CSV エクスポート</button>
+                <button class="mgmt-btn import-btn" id="importBtn">▼ CSV インポート</button>
+                <input type="file" id="csvFileInput" accept=".csv" style="display:none;">
+            </div>
+        </section>
+
+        <!-- 履歴 -->
+        <section class="history-card card">
+            <div class="card-label">履歴ログ</div>
             <ul id="historyList"></ul>
-        </div>
-    </div>
-    
+        </section>
+
+    </main>
+
     <script src="app.js"></script>
 </body>
 </html>
