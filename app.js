@@ -306,9 +306,8 @@ const renderAnalysis = () => {
     computeTrend(7,  elTrend7d);
     computeTrend(30, elTrend30d);
 
-    // 直近10レース 線形回帰の傾き
-    const RACE_N = 10;
-    const raceRecords = sorted.slice(-Math.min(sorted.length, RACE_N + 1));
+    // 通算 線形回帰の傾き
+    const raceRecords = sorted;
     if (raceRecords.length < 2) {
         elLast10Rate.textContent = '---';
         elLast10Rate.className = 'stat-value';
@@ -325,7 +324,7 @@ const renderAnalysis = () => {
         const sign  = slope >= 0 ? '+' : '';
         elLast10Rate.textContent = `${sign}${slope.toFixed(1)}`;
         elLast10Rate.className = 'stat-value ' + (slope > 0 ? 'gain' : slope < 0 ? 'loss' : '');
-        elLast10Sub.textContent = `直近${raceRecords.length - 1}レース / 1レースあたり平均`;
+        elLast10Sub.textContent = `全${raceRecords.length - 1}レース / 1レースあたり平均`;
     }
 };
 
