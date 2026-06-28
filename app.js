@@ -215,6 +215,17 @@ const renderChart = () => {
         return Math.round((scores[i - 2] + scores[i - 1] + scores[i]) / 3);
     });
 
+    // Linear regression
+    const n = scores.length;
+    const sumX  = scores.reduce((s, _, i) => s + i, 0);
+    const sumY  = scores.reduce((s, v) => s + v, 0);
+    const sumXY = scores.reduce((s, v, i) => s + i * v, 0);
+    const sumX2 = scores.reduce((s, _, i) => s + i * i, 0);
+    const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / n;
+    const regression = scores.map((_, i) => Math.round(intercept + slope * i));
+    const regressionColor = slope >= 0 ? 'rgba(251, 146, 60, 0.9)' : 'rgba(248, 113, 113, 0.9)';
+
     const ctx = document.getElementById('vrChart').getContext('2d');
 
     vrChartInstance = new Chart(ctx, {
@@ -246,7 +257,17 @@ const renderChart = () => {
                     pointRadius: 0,
                     fill: false,
                     tension: 0.4,
-                }
+                },
+                {
+                    label: '線形回帰',
+                    data: regression,
+                    borderColor: regressionColor,
+                    borderWidth: 2,
+                    borderDash: [3, 3],
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0,
+                },
             ]
         },
         options: {
@@ -298,10 +319,9 @@ const renderChart = () => {
                     cornerRadius: 8,
                     callbacks: {
                         label: (ctx) => {
-                            if (ctx.datasetIndex === 0) {
-                                return `  VR : ${ctx.parsed.y.toLocaleString()}`;
-                            }
-                            return `  AVG: ${ctx.parsed.y.toLocaleString()}`;
+                            if (ctx.datasetIndex === 0) return `  VR : ${ctx.parsed.y.toLocaleString()}`;
+                            if (ctx.datasetIndex === 1) return `  AVG: ${ctx.parsed.y.toLocaleString()}`;
+                            return `  回帰: ${ctx.parsed.y.toLocaleString()}`;
                         }
                     }
                 }
