@@ -307,7 +307,160 @@ body::before {
 #kpi-avg     { border-left: 3px solid var(--purple); }
 #kpi-count   { border-left: 3px solid var(--blue); }
 
-/* ---- ANALYSIS CARD ---- */
+/* ---- CONDITION CARD ---- */
+.condition-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.condition-title {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.condition-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 1rem;
+}
+
+.condition-header .condition-title {
+    margin-bottom: 0;
+}
+
+.condition-basis {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+}
+
+/* --- Form Meter --- */
+.meter-wrap {
+    margin-bottom: 0.75rem;
+}
+
+.meter-track {
+    height: 14px;
+    background: var(--bg-item);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 0.3rem;
+}
+
+.meter-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--red) 0%, var(--yellow) 45%, var(--green) 100%);
+    background-size: 200% 100%;
+    transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.meter-labels {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+}
+
+.meter-readout {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+}
+
+.meter-pct {
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.meter-label-text {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* form level colors */
+.form-bad       { color: var(--red); }
+.form-poor      { color: #fb923c; }
+.form-average   { color: var(--yellow); }
+.form-good      { color: #4ade80; }
+.form-excellent { color: var(--green); }
+
+/* --- Win Rate --- */
+.winrate-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.winrate-item-label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.4rem;
+    letter-spacing: 0.08em;
+}
+
+.winrate-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.25rem;
+}
+
+.winrate-bar-track {
+    flex: 1;
+    height: 10px;
+    background: var(--bg-item);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.winrate-bar-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 99px;
+    background: var(--cyan);
+    transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1), background 0.4s;
+}
+
+.winrate-bar-fill.good     { background: var(--green); }
+.winrate-bar-fill.average  { background: var(--yellow); }
+.winrate-bar-fill.bad      { background: var(--red); }
+
+.winrate-pct {
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    min-width: 3.5ch;
+    text-align: right;
+}
+
+.winrate-item-sub {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+}
+
+/* ---- ANALYSIS CARD ----
+ */
 .analysis-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -575,6 +728,7 @@ body::before {
     .kpi-grid      { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
     .kpi-value     { font-size: 1.5rem; }
     .analysis-grid { grid-template-columns: repeat(2, 1fr); }
+    .condition-grid { grid-template-columns: 1fr; gap: 1.5rem; }
 
     .chart-section  { height: 240px; }
 
@@ -592,6 +746,8 @@ body::before {
     .kpi-value     { font-size: 1.35rem; }
     .kpi-card      { padding: 1rem 0.875rem; }
     .analysis-grid { grid-template-columns: repeat(2, 1fr); }
+    .condition-grid { grid-template-columns: 1fr; gap: 1.25rem; }
+    .meter-pct     { font-size: 1.5rem; }
 
     .input-section { flex-direction: column; }
     #saveBtn       { width: 100%; padding: 1rem; font-size: 0.9rem; }

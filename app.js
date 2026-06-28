@@ -56,9 +56,128 @@ const saveVR = () => {
 // ---- Render All ----
 const renderAll = () => {
     renderKPI();
+    renderCondition();
     renderAnalysis();
     renderChart();
     renderHistory();
+};
+
+// ---- Condition: Form Meter & Win Rate ----
+const DOW_NAMES = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
+const TIME_BRACKETS = [
+    { label: '深夜 (0〜5時)',   start: 0,  end: 5  },
+    { label: '朝  (6〜11時)',  start: 6,  end: 11 },
+    { label: '昼  (12〜17時)', start: 12, end: 17 },
+    { label: '夜  (18〜23時)', start: 18, end: 23 },
+];
+
+const getTimeBracket = (hour) => TIME_BRACKETS.find(b => hour >= b.start && hour <= b.end);
+
+// 勝率計算: chronologicalなデータ列から「指定インデックスのdiffが正」を勝ちとみなす
+const calcWinRate = (records) => {
+    // recordsは時系列順。各recordに対し「前の記録より上昇したか」を判定
+    if (records.length < 2) return null;
+    const sorted = [...records].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    let wins = 0, total = 0;
+    for (let i = 1; i < sorted.length; i++) {
+        total++;
+        if (sorted[i].vr_score > sorted[i - 1].vr_score) wins++;
+    }
+    return { wins, total, rate: Math.round(wins / total * 100) };
+};
+
+const setWinrateBar = (fillEl, pctEl, subEl, result, labelEl, bracketLabel) => {
+    if (!result || result.total === 0) {
+        fillEl.style.width = '0%';
+        fillEl.className = 'winrate-bar-fill';
+        pctEl.textContent = '--%';
+        subEl.textContent = 'データ不足';
+        labelEl.textContent = bracketLabel;
+        return;
+    }
+    const { wins, total, rate } = result;
+    fillEl.style.width = `${rate}%`;
+    fillEl.className = 'winrate-bar-fill ' + (rate >= 60 ? 'good' : rate >= 40 ? 'average' : 'bad');
+    pctEl.textContent = `${rate}%`;
+    subEl.textContent = `${total}記録中 ${wins}回上昇`;
+    labelEl.textContent = bracketLabel;
+};
+
+const renderCondition = () => {
+    const now = new Date();
+    const currentDow   = now.getDay();
+    const currentHour  = now.getHours();
+    const bracket      = getTimeBracket(currentHour);
+
+    // --- 調子メーター（直近5セッション）---
+    const formFill  = document.getElementById('formMeterFill');
+    const formPct   = document.getElementById('formPct');
+    const formLbl   = document.getElementById('formLabel');
+    const formBasis = document.getElementById('formBasis');
+
+    const sorted = [...vrData].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    const SESSION_N = 5;
+    const recent = sorted.slice(-Math.min(sorted.length, SESSION_N + 1));
+    const recentDiffs = recent.slice(1).map((r, i) => r.vr_score - recent[i].vr_score);
+
+    if (recentDiffs.length === 0) {
+        formFill.style.width = '0%';
+        formPct.textContent = '--';
+        formPct.className = 'meter-pct';
+        formLbl.textContent = 'データ不足';
+        formLbl.className = 'meter-label-text';
+        formBasis.textContent = '直近5セッション';
+    } else {
+        const wins = recentDiffs.filter(d => d > 0).length;
+        const pct  = Math.round(wins / recentDiffs.length * 100);
+        formFill.style.width = `${pct}%`;
+        formPct.textContent = `${pct}%`;
+        formBasis.textContent = `直近${recentDiffs.length}セッション`;
+
+        let level, labelText, colorClass;
+        if      (pct >= 80) { level = 'excellent'; labelText = '絶好調！'; }
+        else if (pct >= 60) { level = 'good';      labelText = '好調';     }
+        else if (pct >= 40) { level = 'average';   labelText = '普通';     }
+        else if (pct >= 20) { level = 'poor';      labelText = '不調';     }
+        else                { level = 'bad';       labelText = '絶不調…';  }
+
+        formPct.className = `meter-pct form-${level}`;
+        formLbl.textContent = labelText;
+        formLbl.className = `meter-label-text form-${level}`;
+    }
+
+    // --- 曜日 & 時間帯 勝率 ---
+    document.getElementById('winrateTitle').textContent =
+        `${DOW_NAMES[currentDow]} / ${bracket ? bracket.label.trim() : '--'} の勝率`;
+
+    // 同じ曜日のデータ（前のレコードとの差分を当日分として計算）
+    const dowRecords = sorted.filter(r => new Date(r.created_at).getDay() === currentDow);
+    const dowResult  = calcWinRate(dowRecords);
+    setWinrateBar(
+        document.getElementById('dowBarFill'),
+        document.getElementById('dowPct'),
+        document.getElementById('dowSub'),
+        dowResult,
+        document.getElementById('dowLabel'),
+        DOW_NAMES[currentDow]
+    );
+
+    // 同じ時間帯のデータ
+    const timeRecords = bracket
+        ? sorted.filter(r => {
+            const h = new Date(r.created_at).getHours();
+            return h >= bracket.start && h <= bracket.end;
+          })
+        : [];
+    const timeResult = calcWinRate(timeRecords);
+    setWinrateBar(
+        document.getElementById('timeBarFill'),
+        document.getElementById('timePct'),
+        document.getElementById('timeSub'),
+        timeResult,
+        document.getElementById('timeLabel'),
+        bracket ? bracket.label : '---'
+    );
 };
 
 // ---- KPI ----
@@ -208,12 +327,7 @@ const renderChart = () => {
     const labels = chrono.map(r => formatShortDate(r.created_at));
     const scores = chrono.map(r => r.vr_score);
 
-    // 3-point moving average
-    const movAvg = scores.map((_, i) => {
-        if (i === 0) return scores[0];
-        if (i === 1) return Math.round((scores[0] + scores[1]) / 2);
-        return Math.round((scores[i - 2] + scores[i - 1] + scores[i]) / 3);
-    });
+
 
     // Linear regression
     const n = scores.length;
@@ -247,16 +361,6 @@ const renderChart = () => {
                     pointHoverBackgroundColor: '#38bdf8',
                     fill: true,
                     tension: 0.3,
-                },
-                {
-                    label: '移動平均',
-                    data: movAvg,
-                    borderColor: 'rgba(167, 139, 250, 0.75)',
-                    borderWidth: 2,
-                    borderDash: [6, 4],
-                    pointRadius: 0,
-                    fill: false,
-                    tension: 0.4,
                 },
                 {
                     label: '線形回帰',
@@ -320,7 +424,6 @@ const renderChart = () => {
                     callbacks: {
                         label: (ctx) => {
                             if (ctx.datasetIndex === 0) return `  VR : ${ctx.parsed.y.toLocaleString()}`;
-                            if (ctx.datasetIndex === 1) return `  AVG: ${ctx.parsed.y.toLocaleString()}`;
                             return `  回帰: ${ctx.parsed.y.toLocaleString()}`;
                         }
                     }

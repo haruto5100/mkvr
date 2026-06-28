@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260628_3">
+    <link rel="stylesheet" href="style.css?v=20260628_5">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -62,6 +62,62 @@
                 <div class="kpi-label">TOTAL RECORDS</div>
                 <div class="kpi-value white" id="kpiCount">0</div>
                 <div class="kpi-sub" id="kpiPeriod"></div>
+            </div>
+        </section>
+
+        <!-- 調子メーター & 勝率 -->
+        <section class="condition-card card">
+            <div class="card-label">現在の調子 / 時間帯別勝率</div>
+            <div class="condition-grid">
+
+                <!-- 調子メーター -->
+                <div class="condition-meter-block">
+                    <div class="condition-header">
+                        <div class="condition-title">現在の調子メーター</div>
+                        <div class="condition-basis" id="formBasis">直近5セッション</div>
+                    </div>
+                    <div class="meter-wrap">
+                        <div class="meter-track">
+                            <div class="meter-fill" id="formMeterFill"></div>
+                        </div>
+                        <div class="meter-labels">
+                            <span>不調</span>
+                            <span>好調</span>
+                        </div>
+                    </div>
+                    <div class="meter-readout">
+                        <span class="meter-pct" id="formPct">--</span>
+                        <span class="meter-label-text" id="formLabel">データ不足</span>
+                    </div>
+                </div>
+
+                <!-- 曜日×時間帯 勝率 -->
+                <div class="winrate-block">
+                    <div class="condition-title" id="winrateTitle">-- の勝率</div>
+                    <div class="winrate-grid">
+                        <div class="winrate-item">
+                            <div class="winrate-item-label" id="dowLabel">---</div>
+                            <div class="winrate-bar-wrap">
+                                <div class="winrate-bar-track">
+                                    <div class="winrate-bar-fill" id="dowBarFill"></div>
+                                </div>
+                                <span class="winrate-pct" id="dowPct">--%</span>
+                            </div>
+                            <div class="winrate-item-sub" id="dowSub"></div>
+                        </div>
+                        <div class="winrate-item">
+                            <div class="winrate-item-label" id="timeLabel">---</div>
+                            <div class="winrate-bar-wrap">
+                                <div class="winrate-bar-track">
+                                    <div class="winrate-bar-fill" id="timeBarFill"></div>
+                                </div>
+                                <span class="winrate-pct" id="timePct">--%</span>
+                            </div>
+                            <div class="winrate-item-sub" id="timeSub"></div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </section>
 
@@ -130,6 +186,6 @@
 
     </main>
 
-    <script src="app.js?v=20260628_3"></script>
+    <script src="app.js?v=20260628_5"></script>
 </body>
 </html>
