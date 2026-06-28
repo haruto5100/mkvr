@@ -212,7 +212,7 @@ const renderKPI = () => {
         elDiff.textContent = fmtDiff(d);
         elDiff.className = 'kpi-diff ' + (d > 0 ? 'diff-up' : d < 0 ? 'diff-down' : 'diff-none');
     } else {
-        elDiff.textContent = 'FIRST RECORD';
+        elDiff.textContent = '最初の記録';
         elDiff.className = 'kpi-diff diff-none';
     }
 
@@ -234,7 +234,7 @@ const renderKPI = () => {
         const first = sorted[0];
         const ms = new Date(latest.created_at) - new Date(first.created_at);
         const days = Math.floor(ms / 86400000);
-        elPeriod.textContent = days === 0 ? 'TODAY' : `${days} DAYS`;
+        elPeriod.textContent = days === 0 ? '本日' : `${days}日間`;
     } else {
         elPeriod.textContent = '';
     }
@@ -438,7 +438,7 @@ const renderHistory = () => {
     historyList.innerHTML = '';
 
     if (vrData.length === 0) {
-        historyList.innerHTML = '<li class="history-empty">NO RECORDS FOUND</li>';
+        historyList.innerHTML = '<li class="history-empty">記録がありません</li>';
         return;
     }
 
@@ -465,7 +465,7 @@ const renderHistory = () => {
                 ${diffHtml}
                 <span class="history-date">${formatDate(item.created_at)}</span>
             </div>
-            <button class="history-del" data-id="${item.id}">DEL</button>
+            <button class="history-del" data-id="${item.id}">削除</button>
         `;
 
         li.querySelector('.history-del').addEventListener('click', () => deleteVR(item.id));

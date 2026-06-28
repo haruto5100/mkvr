@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MK WORLD // VR SYSTEM</title>
+    <title>MK WORLD // VR管理システム</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260628_5">
+    <link rel="stylesheet" href="style.css?v=20260628_6">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -18,11 +18,11 @@
             <div class="header-logo">
                 <span class="logo-text">MK WORLD</span>
                 <div class="logo-sep"></div>
-                <span class="logo-sub">VR TRACKER</span>
+                <span class="logo-sub">VR管理システム</span>
             </div>
             <div class="header-status">
                 <span class="status-dot"></span>
-                <span class="status-text">ONLINE</span>
+                <span class="status-text">稼働中</span>
             </div>
         </div>
     </header>
@@ -37,29 +37,45 @@
                     <span class="input-prefix">VR &gt;</span>
                     <input type="number" id="vrInput" placeholder="現在のVRを入力" autocomplete="off">
                 </div>
-                <button id="saveBtn">RECORD</button>
+                <button id="saveBtn">記録する</button>
+            </div>
+        </section>
+
+        <!-- グラフ（最上部） -->
+        <section class="chart-card card">
+            <div class="card-header">
+                <div class="card-label" style="margin-bottom:0;">VR推移グラフ</div>
+                <div class="chart-controls">
+                    <button class="filter-btn" data-period="all">全期間</button>
+                    <button class="filter-btn" data-period="1m">30日</button>
+                    <button class="filter-btn" data-period="1w">7日</button>
+                </div>
+            </div>
+            <div class="chart-section">
+                <canvas id="vrChart"></canvas>
+                <div class="chart-empty" id="chartEmpty">データがありません</div>
             </div>
         </section>
 
         <!-- KPIカード -->
         <section class="kpi-grid">
             <div class="kpi-card card" id="kpi-current">
-                <div class="kpi-label">CURRENT VR</div>
+                <div class="kpi-label">現在のVR</div>
                 <div class="kpi-value cyan" id="kpiCurrent">---</div>
                 <div class="kpi-diff" id="kpiDiff"></div>
             </div>
             <div class="kpi-card card" id="kpi-best">
-                <div class="kpi-label">PERSONAL BEST</div>
+                <div class="kpi-label">自己ベスト</div>
                 <div class="kpi-value yellow" id="kpiPB">---</div>
                 <div class="kpi-sub" id="kpiPBDate"></div>
             </div>
             <div class="kpi-card card" id="kpi-avg">
-                <div class="kpi-label">AVERAGE VR</div>
+                <div class="kpi-label">平均VR</div>
                 <div class="kpi-value magenta" id="kpiAvg">---</div>
                 <div class="kpi-sub" id="kpiAvgSub"></div>
             </div>
             <div class="kpi-card card" id="kpi-count">
-                <div class="kpi-label">TOTAL RECORDS</div>
+                <div class="kpi-label">総記録数</div>
                 <div class="kpi-value white" id="kpiCount">0</div>
                 <div class="kpi-sub" id="kpiPeriod"></div>
             </div>
@@ -126,19 +142,19 @@
             <div class="card-label">セッション分析</div>
             <div class="analysis-grid">
                 <div class="stat-item">
-                    <div class="stat-label">MAX GAIN</div>
+                    <div class="stat-label">最大上昇幅</div>
                     <div class="stat-value gain" id="statMaxGain">---</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-label">MAX LOSS</div>
+                    <div class="stat-label">最大下降幅</div>
                     <div class="stat-value loss" id="statMaxLoss">---</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-label">WIN STREAK</div>
+                    <div class="stat-label">連続上昇</div>
                     <div class="stat-value gain" id="statWinStreak">---</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-label">LOSE STREAK</div>
+                    <div class="stat-label">連続下降</div>
                     <div class="stat-value loss" id="statLoseStreak">---</div>
                 </div>
                 <div class="stat-item">
@@ -152,28 +168,12 @@
             </div>
         </section>
 
-        <!-- グラフ -->
-        <section class="chart-card card">
-            <div class="card-header">
-                <div class="card-label" style="margin-bottom:0;">VR推移グラフ</div>
-                <div class="chart-controls">
-                    <button class="filter-btn" data-period="all">ALL</button>
-                    <button class="filter-btn" data-period="1m">30D</button>
-                    <button class="filter-btn" data-period="1w">7D</button>
-                </div>
-            </div>
-            <div class="chart-section">
-                <canvas id="vrChart"></canvas>
-                <div class="chart-empty" id="chartEmpty">データがありません</div>
-            </div>
-        </section>
-
         <!-- データ管理 -->
         <section class="data-mgmt-card card">
             <div class="card-label">データ管理</div>
             <div class="data-mgmt-buttons">
-                <button class="mgmt-btn export-btn" id="exportBtn">▲ CSV エクスポート</button>
-                <button class="mgmt-btn import-btn" id="importBtn">▼ CSV インポート</button>
+                <button class="mgmt-btn export-btn" id="exportBtn">▲ CSVエクスポート</button>
+                <button class="mgmt-btn import-btn" id="importBtn">▼ CSVインポート</button>
                 <input type="file" id="csvFileInput" accept=".csv" style="display:none;">
             </div>
         </section>
@@ -186,6 +186,6 @@
 
     </main>
 
-    <script src="app.js?v=20260628_5"></script>
+    <script src="app.js?v=20260628_6"></script>
 </body>
 </html>
