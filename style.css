@@ -532,27 +532,74 @@ body::before {
 }
 
 /* ---- RESPONSIVE ---- */
-@media (max-width: 720px) {
-    .kpi-grid      { grid-template-columns: repeat(2, 1fr); }
-    .analysis-grid { grid-template-columns: repeat(2, 1fr); }
-    .kpi-value     { font-size: 1.5rem; }
+
+/* タブレット横向き / 小さいラップトップ (〜1024px) */
+@media (max-width: 1024px) {
+    .container {
+        max-width: 100%;
+        padding: 1.5rem 1.5rem 3rem;
+    }
+    .kpi-value { font-size: 1.55rem; }
 }
 
-@media (max-width: 480px) {
-    .container { padding: 1rem 0.875rem 3rem; gap: 1rem; }
+/* タブレット縦向き (〜860px) */
+@media (max-width: 860px) {
+    .container {
+        padding: 1.25rem 1.25rem 3rem;
+        gap: 1.1rem;
+    }
+
+    /* KPI: 2×2グリッドに変更 */
+    .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    .kpi-value     { font-size: 1.7rem; }
+    .kpi-card      { padding: 1.25rem 1.1rem; }
+
+    /* 分析: 3→2カラム */
+    .analysis-grid { grid-template-columns: repeat(3, 1fr); }
+
+    /* グラフ高さをやや縮小 */
+    .chart-section { height: 260px; }
+}
+
+/* タブレット小・大型スマホ (〜680px) */
+@media (max-width: 680px) {
+    .container { padding: 1rem 1rem 3rem; gap: 1rem; }
     .card      { padding: 1.25rem; }
 
     .header-logo { gap: 0.5rem; }
-    .logo-text   { font-size: 0.9rem; }
     .logo-sub    { display: none; }
 
     .kpi-grid      { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
-    .kpi-value     { font-size: 1.4rem; }
+    .kpi-value     { font-size: 1.5rem; }
+    .analysis-grid { grid-template-columns: repeat(2, 1fr); }
+
+    .chart-section  { height: 240px; }
+
+    .data-mgmt-buttons { flex-direction: row; }
+}
+
+/* スマートフォン (〜480px) */
+@media (max-width: 480px) {
+    .container { padding: 0.875rem 0.875rem 3rem; gap: 0.875rem; }
+    .card      { padding: 1.1rem; border-radius: var(--radius); }
+
+    .logo-text { font-size: 0.9rem; }
+
+    .kpi-grid      { grid-template-columns: repeat(2, 1fr); gap: 0.65rem; }
+    .kpi-value     { font-size: 1.35rem; }
+    .kpi-card      { padding: 1rem 0.875rem; }
     .analysis-grid { grid-template-columns: repeat(2, 1fr); }
 
     .input-section { flex-direction: column; }
     #saveBtn       { width: 100%; padding: 1rem; font-size: 0.9rem; }
 
     .data-mgmt-buttons { flex-direction: column; }
-    .chart-section     { height: 240px; }
+    .chart-section     { height: 210px; }
+
+    .history-score { font-size: 1rem; }
+    .history-diff  { font-size: 0.82rem; }
+    .history-date  { font-size: 0.75rem; }
 }
