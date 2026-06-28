@@ -248,10 +248,15 @@ const renderAnalysis = () => {
     const elLoseStreak  = document.getElementById('statLoseStreak');
     const elTrend7d     = document.getElementById('statTrend7d');
     const elTrend30d    = document.getElementById('statTrend30d');
+    const elLast10Rate  = document.getElementById('statLast10Rate');
+    const elLast10Sub   = document.getElementById('statLast10Sub');
 
     if (vrData.length < 2) {
         [elMaxGain, elMaxLoss, elWinStreak, elLoseStreak, elTrend7d, elTrend30d]
             .forEach(el => { el.textContent = '---'; el.className = 'stat-value'; });
+        elLast10Rate.textContent = '---';
+        elLast10Rate.className = 'stat-value';
+        elLast10Sub.textContent = '';
         return;
     }
 
@@ -279,8 +284,8 @@ const renderAnalysis = () => {
             break;
         }
     }
-    elWinStreak.textContent  = winStreak  > 0 ? `${winStreak} GAMES`  : '---';
-    elLoseStreak.textContent = loseStreak > 0 ? `${loseStreak} GAMES` : '---';
+    elWinStreak.textContent  = winStreak  > 0 ? `${winStreak}連続` : '---';
+    elLoseStreak.textContent = loseStreak > 0 ? `${loseStreak}連続` : '---';
     elWinStreak.className  = winStreak  > 0 ? 'stat-value gain' : 'stat-value';
     elLoseStreak.className = loseStreak > 0 ? 'stat-value loss' : 'stat-value';
 
@@ -289,7 +294,7 @@ const renderAnalysis = () => {
         const cutoff = new Date(Date.now() - days * 86400000);
         const recent = sorted.filter(r => new Date(r.created_at) >= cutoff);
         if (recent.length < 2) {
-            el.textContent = 'NO DATA';
+            el.textContent = 'データなし';
             el.className = 'stat-value trend-flat';
             return;
         }
@@ -300,6 +305,28 @@ const renderAnalysis = () => {
 
     computeTrend(7,  elTrend7d);
     computeTrend(30, elTrend30d);
+
+    // 直近10レース 線形回帰の傾き
+    const RACE_N = 10;
+    const raceRecords = sorted.slice(-Math.min(sorted.length, RACE_N + 1));
+    if (raceRecords.length < 2) {
+        elLast10Rate.textContent = '---';
+        elLast10Rate.className = 'stat-value';
+        elLast10Sub.textContent = '';
+    } else {
+        const xs = raceRecords.map((_, i) => i);
+        const ys = raceRecords.map(r => r.vr_score);
+        const n  = xs.length;
+        const sumX  = xs.reduce((s, x) => s + x, 0);
+        const sumY  = ys.reduce((s, y) => s + y, 0);
+        const sumXY = xs.reduce((s, x, i) => s + x * ys[i], 0);
+        const sumX2 = xs.reduce((s, x) => s + x * x, 0);
+        const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+        const sign  = slope >= 0 ? '+' : '';
+        elLast10Rate.textContent = `${sign}${slope.toFixed(1)}`;
+        elLast10Rate.className = 'stat-value ' + (slope > 0 ? 'gain' : slope < 0 ? 'loss' : '');
+        elLast10Sub.textContent = `直近${raceRecords.length - 1}レース / 1レースあたり平均`;
+    }
 };
 
 // ---- Chart ----

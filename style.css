@@ -496,6 +496,34 @@ body::before {
 .stat-value.trend-down { color: var(--red); }
 .stat-value.trend-flat { color: var(--text-muted); }
 
+.stat-sublabel {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    margin-top: 0.3rem;
+}
+
+/* 横幅いっぱいに広がるアイテム */
+.stat-item--wide {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.stat-item--wide .stat-label { margin-bottom: 0; white-space: nowrap; }
+
+.stat-item--wide .stat-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.stat-item--wide .stat-sublabel {
+    margin-top: 0;
+    font-size: 0.75rem;
+}
+
 /* ---- CHART ---- */
 .card-header {
     display: flex;
